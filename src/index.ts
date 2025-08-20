@@ -1,7 +1,8 @@
-import { Elysia } from "elysia";
+import { createApp } from "./app";
+import { env } from "./config/env";
 
-const app = new Elysia().get("/", () => "Hello Elysia").listen(3000);
+const app = createApp().listen(env.PORT);
 
 console.log(
-  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
+  `🟢 Read API listening on http://localhost:${env.PORT} (docs: /docs)`
 );

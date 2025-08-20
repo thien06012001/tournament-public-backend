@@ -1,0 +1,230 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator prismabox { 
+  provider = "prismabox"
+  typeboxImportDependencyName = "elysia"
+  typeboxImportVariableName = "t"
+  inputModel = true
+  output   = "../src/generated/prismabox"
+} 
+model Sport {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tournaments Tournament[]
+
+  @@map("sports")
+}
+
+model Tournament {
+  id          String         @id @default(uuid())
+  name        String
+  // sport       String
+  location    String
+  type        TournamentType
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  banner      String?
+  background  String?
+  thumbnail   String?
+
+  leaderboard Leaderboard?
+  theme       String?
+
+  participants TournamentParticipant[]
+  stages       Stage[]
+
+  sport   Sport?  @relation(fields: [sportId], references: [id])
+  sportId String?
+  Theme   Theme?
+
+  @@map("tournaments")
+}
+
+model Theme {
+  id      String  @id @default(uuid())
+  enabled Boolean @default(false)
+  colors  String
+
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+}
+
+model Stage {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  order           Int
+  parallelMatches Int      @default(0)
+  maxTimePerMatch Float    @default(0)
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  type StageType
+
+  matches Match[]
+  winners TournamentParticipant[]
+  rounds  Round[]
+
+  @@map("stages")
+}
+
+model Round {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Int
+
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  matches Match[]
+
+  @@map("rounds")
+}
+
+model Match {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  order     Int
+  ended     Boolean   @default(false)
+  videoId   String?
+  matchDate DateTime?
+  matchTime String?
+  startTime DateTime?
+  endTime   DateTime?
+  bracket   String?
+
+  winner   TournamentParticipant? @relation("Winner", fields: [winnerId], references: [id], onDelete: Cascade)
+  winnerId String?
+
+  participantOneId String?
+  participantOne   TournamentParticipant? @relation("ParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
+
+  participantTwoId String?
+  participantTwo   TournamentParticipant? @relation("ParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
+
+  stageId String?
+  stage   Stage?  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  round   Round?  @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  roundId String?
+
+  results MatchResult[]
+
+  @@map("matches")
+}
+
+model MatchResult {
+  id                  String @id @default(cuid())
+  order               Int
+  participantOneScore Int
+  participantTwoScore Int
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("match_results")
+}
+
+model Leaderboard {
+  id String @id @default(uuid())
+
+  tournamentId String     @unique
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  rankings Ranking[]
+
+  @@map("leaderboards")
+}
+
+model Ranking {
+  id      String @id @default(uuid())
+  ranking Int
+
+  leaderboardId String
+  leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
+
+  participantId String                @unique
+  participant   TournamentParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("rankings")
+}
+
+enum StageType {
+  SingleElimination
+  DoubleElimination
+  Round
+  Leaderboard
+}
+
+enum TournamentType {
+  individual
+  team
+}
+
+model TournamentParticipant {
+  id    String  @id @default(uuid())
+  name  String
+  email String?
+  order Int
+  phone String?
+
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  members               TeamMember[]
+  participantOneMatches Match[]      @relation("ParticipantOne")
+  participantTwoMatches Match[]      @relation("ParticipantTwo")
+
+  wonMatches Match[] @relation("Winner")
+
+  ranking Ranking?
+
+  stage   Stage?  @relation(fields: [stageId], references: [id])
+  stageId String?
+
+  @@map("tournament_participants")
+}
+
+model TeamMember {
+  id    String  @id @default(uuid())
+  name  String
+  email String?
+  phone String?
+  order Int
+
+  tournamentParticipant   TournamentParticipant @relation(fields: [tournamentParticipantId], references: [id], onDelete: Cascade)
+  tournamentParticipantId String
+
+  @@map("team_members")
+}
+
+model Configuration {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("configurations")
+}
