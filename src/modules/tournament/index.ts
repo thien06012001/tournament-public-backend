@@ -15,6 +15,7 @@ export const TournamentModule = new Elysia({
     "tournaments.list.query": TournamentModel.listQuery,
     "tournaments.list.response": TournamentModel.listResponse,
     "tournaments.detail.response": TournamentModel.detailResponse,
+    "tournaments.all.response": TournamentModel.listAllResponse,
     "error.default": t.Object({ message: t.String() }),
   })
 
@@ -30,6 +31,18 @@ export const TournamentModule = new Elysia({
       detail: {
         tags: ["Tournaments"],
         summary: "List tournaments with filters",
+      },
+    }
+  )
+  .get(
+    "/all",
+    async ({ prisma }) => {
+      return TournamentService.getAll(prisma);
+    },
+    {
+      detail: {
+        tags: ["Tournaments"],
+        summary: "List all tournaments with filters",
       },
     }
   )

@@ -166,6 +166,7 @@ export class SystemService {
         startDate: true,
         location: true,
         type: true,
+        thumbnail: true,
       },
     });
 
@@ -217,6 +218,7 @@ export class SystemService {
       location: t.location,
       type: t.type,
       teamSize: t.type === "team" ? (teamSizes[t.id] ?? null) : null,
+      thumbnail: t.thumbnail,
     }));
 
     return { today, tomorrow, ongoing, upcomingTournaments };

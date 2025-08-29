@@ -80,6 +80,12 @@ export namespace TournamentModel {
     pageInfo,
   });
 
+  export const listAllResponse = t.Object({
+    ongoing: t.Array(listItem),
+    upcoming: t.Array(listItem),
+    past: t.Array(listItem),
+  });
+
   /**
    * Detail response parts
    */

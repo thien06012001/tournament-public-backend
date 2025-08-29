@@ -1,3 +1,4 @@
+import { prisma } from "./../../plugins/prisma";
 import type { PrismaMinimal } from "../../plugins/prisma";
 import { clampPageSize, buildPageInfo } from "../../utils/pagination";
 import { statusFromDates } from "../../utils/date";
@@ -95,6 +96,7 @@ export class TournamentService {
             order: true,
           },
         },
+        theme: true,
         stages: {
           select: {
             id: true,
@@ -167,5 +169,42 @@ export class TournamentService {
       stages: t.stages.map((s) => ({ id: s.id, order: s.order, type: s.type })),
       rounds,
     };
+  }
+
+  static async getAll(prisma: PrismaMinimal) {
+    const [ongoing, upcoming, past] = await Promise.all([
+      prisma.tournament.findMany({
+        where: {
+          startDate: {
+            lte: new Date(),
+          },
+          endDate: {
+            gte: new Date(),
+          },
+        },
+      }),
+      prisma.tournament.findMany({
+        where: {
+          startDate: {
+            gt: new Date(),
+          },
+          endDate: {
+            gt: new Date(),
+          },
+        },
+      }),
+      prisma.tournament.findMany({
+        where: {
+          startDate: {
+            lt: new Date(),
+          },
+          endDate: {
+            lt: new Date(),
+          },
+        },
+      }),
+    ]);
+
+    return { ongoing, upcoming, past };
   }
 }
