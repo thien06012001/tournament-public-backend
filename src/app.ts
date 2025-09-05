@@ -8,6 +8,7 @@ import { ErrorMiddleware } from "./middlewares/error";
 import { HealthModule } from "./modules/health";
 import { TournamentModule } from "./modules/tournament";
 import { SystemModule } from "./modules/system";
+import { MatchModule } from "./modules/match";
 
 export function createApp() {
   return (
@@ -22,6 +23,7 @@ export function createApp() {
       // feature modules
       .use(HealthModule)
       .use(TournamentModule)
+      .use(MatchModule)
       .use(SystemModule)
       // Read-only HTTP guard (allow only GET/OPTIONS)
       .onRequest(({ request, set }) => {
