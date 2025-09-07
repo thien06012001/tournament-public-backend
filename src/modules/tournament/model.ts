@@ -63,7 +63,6 @@ export namespace TournamentModel {
     background: t.Nullable(t.String()),
     thumbnail: t.Nullable(t.String()),
     sportId: t.Nullable(t.String()),
-    status: Status,
   });
 
   export const pageInfo = t.Object({

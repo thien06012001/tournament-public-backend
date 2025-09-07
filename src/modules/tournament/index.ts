@@ -30,19 +30,102 @@ export const TournamentModule = new Elysia({
       response: { 200: "tournaments.list.response" },
       detail: {
         tags: ["Tournaments"],
-        summary: "List tournaments with filters",
+        summary: "List tournaments with filters and pagination",
       },
     }
   )
+
+  // GET /tournaments/upcoming — list upcoming tournaments
+  .get(
+    "/upcoming",
+    async ({ prisma, query }) => {
+      return TournamentService.list(prisma, {
+        ...query,
+        status: "upcoming",
+      } as any);
+    },
+    {
+      query: "tournaments.list.query",
+      response: { 200: "tournaments.list.response" },
+      detail: {
+        tags: ["Tournaments"],
+        summary: "List upcoming tournaments with pagination",
+      },
+    }
+  )
+
+  // GET /tournaments/ongoing — list ongoing tournaments
+  .get(
+    "/ongoing",
+    async ({ prisma, query }) => {
+      return TournamentService.list(prisma, {
+        ...query,
+        status: "ongoing",
+      } as any);
+    },
+    {
+      query: "tournaments.list.query",
+      response: { 200: "tournaments.list.response" },
+      detail: {
+        tags: ["Tournaments"],
+        summary: "List ongoing tournaments with pagination",
+      },
+    }
+  )
+
+  // GET /tournaments/past — list completed tournaments
+  .get(
+    "/past",
+    async ({ prisma, query }) => {
+      return TournamentService.list(prisma, {
+        ...query,
+        status: "completed",
+      } as any);
+    },
+    {
+      query: "tournaments.list.query",
+      response: { 200: "tournaments.list.response" },
+      detail: {
+        tags: ["Tournaments"],
+        summary: "List completed tournaments with pagination",
+      },
+    }
+  )
+
   .get(
     "/all",
     async ({ prisma }) => {
       return TournamentService.getAll(prisma);
     },
     {
+      response: { 200: "tournaments.all.response" },
       detail: {
         tags: ["Tournaments"],
-        summary: "List all tournaments with filters",
+        summary: "Get all tournaments grouped by status",
+      },
+    }
+  )
+  .get(
+    "/all/:status",
+    async ({ prisma, params: { status }, query: { page, pageSize } }) => {
+      return TournamentService.getByStatus(status, page, prisma, pageSize);
+    },
+    {
+      params: t.Object({
+        status: t.Enum({
+          ongoing: "ongoing",
+          upcoming: "upcoming",
+          past: "past",
+        }),
+      }),
+      query: t.Object({
+        page: t.Integer({ minimum: 1, default: 1 }),
+        pageSize: t.Integer({ minimum: 1, maximum: 100, default: 12 }),
+      }),
+      response: { 200: "tournaments.list.response" },
+      detail: {
+        tags: ["Tournaments"],
+        summary: "Get tournaments by status with pagination",
       },
     }
   )

@@ -3,20 +3,45 @@ import { MatchWithDetails } from "./model";
 import { formatDateForGrouping, getMatchDateTime } from "@/utils/date";
 
 export class MatchService {
-  async getAll(
-    prisma: PrismaMinimal,
-    options?: {
-      page?: number;
-      limit?: number;
-    }
-  ) {
-    const { page = 1, limit = 10 } = options || {};
-    const skip = (page - 1) * limit;
+  async getAll(prisma: PrismaMinimal) {
+    // Get today's date range (start and end of today)
+    const today = new Date();
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+    const endOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
 
-    // Get total count for pagination info
-    const total = await prisma.match.count();
+    // Filter condition for today's matches
+    const todayFilter = {
+      OR: [
+        {
+          matchDate: {
+            gte: startOfToday,
+            lt: endOfToday,
+          },
+        },
+        {
+          AND: [
+            { matchDate: null },
+            {
+              startTime: {
+                gte: startOfToday,
+                lt: endOfToday,
+              },
+            },
+          ],
+        },
+      ],
+    };
 
     const matches = await prisma.match.findMany({
+      where: todayFilter,
       include: {
         participantOne: {
           select: {
@@ -44,51 +69,9 @@ export class MatchService {
         },
         results: true,
       },
-      orderBy: [{ matchDate: "desc" }, { startTime: "desc" }, { order: "asc" }],
-      skip,
-      take: limit,
+      orderBy: [{ matchDate: "asc" }, { startTime: "asc" }, { order: "asc" }],
     });
 
-    const groupedMatches = new Map<string, MatchWithDetails[]>();
-
-    matches.forEach((match) => {
-      // Use utility function to get the appropriate date
-      const matchDateTime = getMatchDateTime(match);
-      const groupDate = formatDateForGrouping(matchDateTime);
-
-      if (!groupedMatches.has(groupDate)) {
-        groupedMatches.set(groupDate, []);
-      }
-
-      groupedMatches.get(groupDate)!.push(match);
-    });
-
-    // Convert Map to array of objects for easier consumption
-    const result = Array.from(groupedMatches.entries())
-      .map(([date, matches]) => ({
-        date,
-        matches: matches.sort((a, b) => {
-          // Sort matches within each date by time (latest first)
-          const timeA = getMatchDateTime(a);
-          const timeB = getMatchDateTime(b);
-          return timeB.getTime() - timeA.getTime();
-        }),
-      }))
-      .sort((a, b) => b.date.localeCompare(a.date));
-
-    const totalPages = Math.ceil(total / limit);
-    const hasMore = page < totalPages;
-
-    return {
-      data: result,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasMore,
-        hasPrev: page > 1,
-      },
-    };
+    return matches;
   }
 }

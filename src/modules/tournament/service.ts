@@ -1,7 +1,7 @@
-import { prisma } from "./../../plugins/prisma";
-import type { PrismaMinimal } from "../../plugins/prisma";
+import { prisma, type PrismaMinimal } from "../../plugins/prisma";
 import { clampPageSize, buildPageInfo } from "../../utils/pagination";
 import { statusFromDates } from "../../utils/date";
+import { t } from "elysia";
 
 type ListQuery = {
   q?: string;
@@ -15,12 +15,25 @@ type ListQuery = {
   order?: "asc" | "desc";
 };
 
+export const getTournamentsByStatusSchema = t.Object({
+  status: t.Enum({
+    ongoing: "ongoing",
+    upcoming: "upcoming",
+    past: "past",
+  }),
+  page: t.Number(),
+});
+
+type GetTournamentsByStatusRequest = typeof getTournamentsByStatusSchema.static;
+
 export class TournamentService {
   static async list(prisma: PrismaMinimal, query: ListQuery) {
     const page = query.page ?? 1;
     const pageSize = clampPageSize(query.pageSize ?? 20);
+    const now = new Date();
 
-    const where: any = {
+    // Build base where condition
+    const baseWhere: any = {
       AND: [
         query.q
           ? { name: { contains: query.q, mode: "insensitive" } }
@@ -31,15 +44,33 @@ export class TournamentService {
       ].filter(Boolean),
     };
 
+    // Add status filtering to WHERE clause to fix pagination
+    if (query.status) {
+      switch (query.status) {
+        case "upcoming":
+          baseWhere.AND.push({ startDate: { gt: now } });
+          break;
+        case "ongoing":
+          baseWhere.AND.push(
+            { startDate: { lte: now } },
+            { endDate: { gte: now } }
+          );
+          break;
+        case "completed":
+          baseWhere.AND.push({ endDate: { lt: now } });
+          break;
+      }
+    }
+
     const orderBy = {
       [query.orderBy ?? "createdAt"]: query.order ?? "asc",
     } as const;
 
     // Keep transaction for atomic count + page read (allowed by our plugin)
     const [total, rows] = await prisma.$transaction([
-      prisma.tournament.count({ where }),
+      prisma.tournament.count({ where: baseWhere }),
       prisma.tournament.findMany({
-        where,
+        where: baseWhere,
         orderBy,
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -59,15 +90,12 @@ export class TournamentService {
       }),
     ]);
 
-    const now = new Date();
-    let items = rows.map((r) => ({
+    const items = rows.map((r) => ({
       ...r,
       startDate: r.startDate.toISOString(),
       endDate: r.endDate.toISOString(),
       status: statusFromDates(now, r.startDate, r.endDate),
     }));
-
-    if (query.status) items = items.filter((i) => i.status === query.status);
 
     return { items, pageInfo: buildPageInfo(total, page, pageSize) };
   }
@@ -172,39 +200,177 @@ export class TournamentService {
   }
 
   static async getAll(prisma: PrismaMinimal) {
-    const [ongoing, upcoming, past] = await Promise.all([
+    const now = new Date();
+
+    const [ongoingRows, upcomingRows, pastRows] = await Promise.all([
       prisma.tournament.findMany({
         where: {
           startDate: {
-            lte: new Date(),
+            lte: now,
           },
           endDate: {
-            gte: new Date(),
+            gte: now,
           },
         },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          type: true,
+          description: true,
+          startDate: true,
+          endDate: true,
+          banner: true,
+          background: true,
+          thumbnail: true,
+          sportId: true,
+        },
+        take: 3,
+        orderBy: { startDate: "asc" },
       }),
       prisma.tournament.findMany({
         where: {
           startDate: {
-            gt: new Date(),
+            gt: now,
           },
           endDate: {
-            gt: new Date(),
+            gt: now,
           },
         },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          type: true,
+          description: true,
+          startDate: true,
+          endDate: true,
+          banner: true,
+          background: true,
+          thumbnail: true,
+          sportId: true,
+        },
+        take: 3,
+        orderBy: { startDate: "asc" },
       }),
       prisma.tournament.findMany({
         where: {
           startDate: {
-            lt: new Date(),
+            lt: now,
           },
           endDate: {
-            lt: new Date(),
+            lt: now,
           },
         },
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          type: true,
+          description: true,
+          startDate: true,
+          endDate: true,
+          banner: true,
+          background: true,
+          thumbnail: true,
+          sportId: true,
+        },
+        take: 3,
+        orderBy: { startDate: "desc" },
       }),
     ]);
 
+    const ongoing = ongoingRows.map((r) => ({
+      ...r,
+      startDate: r.startDate.toISOString(),
+      endDate: r.endDate.toISOString(),
+    }));
+
+    const upcoming = upcomingRows.map((r) => ({
+      ...r,
+      startDate: r.startDate.toISOString(),
+      endDate: r.endDate.toISOString(),
+    }));
+
+    const past = pastRows.map((r) => ({
+      ...r,
+      startDate: r.startDate.toISOString(),
+      endDate: r.endDate.toISOString(),
+    }));
+
     return { ongoing, upcoming, past };
+  }
+
+  static async getByStatus(
+    status: "ongoing" | "upcoming" | "past",
+    page: number,
+    prisma: PrismaMinimal,
+    pageSize: number = 12
+  ) {
+    const select = {
+      id: true,
+      name: true,
+      location: true,
+      type: true,
+      description: true,
+      startDate: true,
+      endDate: true,
+      banner: true,
+      background: true,
+      thumbnail: true,
+      sportId: true,
+    };
+
+    const now = new Date();
+    const take = clampPageSize(pageSize);
+    const skip = (page - 1) * take;
+
+    let whereClause;
+    let orderBy;
+
+    switch (status) {
+      case "ongoing":
+        whereClause = {
+          startDate: { lte: now },
+          endDate: { gte: now },
+        };
+        orderBy = { startDate: "asc" };
+        break;
+      case "upcoming":
+        whereClause = {
+          startDate: { gt: now },
+        };
+        orderBy = { startDate: "asc" };
+        break;
+      case "past":
+        whereClause = {
+          endDate: { lt: now },
+        };
+        orderBy = { startDate: "desc" };
+        break;
+      default:
+        return { items: [], pageInfo: buildPageInfo(0, page, take) };
+    }
+
+    // Get total count and tournaments in parallel
+    const [total, tournaments] = await Promise.all([
+      prisma.tournament.count({ where: whereClause }),
+      prisma.tournament.findMany({
+        where: whereClause,
+        select,
+        take,
+        skip,
+        orderBy: orderBy as any,
+      }),
+    ]);
+
+    const items = tournaments.map((t) => ({
+      ...t,
+      startDate: t.startDate.toISOString(),
+      endDate: t.endDate.toISOString(),
+      status: status === "past" ? "completed" : status,
+    })) as any;
+
+    return { items, pageInfo: buildPageInfo(total, page, take) };
   }
 }
