@@ -165,7 +165,7 @@ model Leaderboard {
 model Ranking {
   id      String @id @default(uuid())
   ranking Int
-
+  result  String? // <— store CSV "Result"
   leaderboardId String
   leaderboard   Leaderboard @relation(fields: [leaderboardId], references: [id], onDelete: Cascade)
 

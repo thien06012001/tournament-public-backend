@@ -154,5 +154,7 @@ export namespace TournamentModel {
     participants: t.Array(participant),
     stages: t.Array(stage),
     rounds: t.Array(round),
+    theme: t.Nullable(t.String()),
+    leaderboard: t.Optional(t.Any()), // Flexible structure, handled in frontend
   });
 }

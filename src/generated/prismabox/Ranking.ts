@@ -8,6 +8,7 @@ export const RankingPlain = t.Object(
   {
     id: t.String(),
     ranking: t.Integer(),
+    result: __nullable__(t.String()),
     leaderboardId: t.String(),
     participantId: t.String(),
   },
@@ -37,12 +38,15 @@ export const RankingRelations = t.Object(
 );
 
 export const RankingPlainInputCreate = t.Object(
-  { ranking: t.Integer() },
+  { ranking: t.Integer(), result: t.Optional(__nullable__(t.String())) },
   { additionalProperties: false },
 );
 
 export const RankingPlainInputUpdate = t.Object(
-  { ranking: t.Optional(t.Integer()) },
+  {
+    ranking: t.Optional(t.Integer()),
+    result: t.Optional(__nullable__(t.String())),
+  },
   { additionalProperties: false },
 );
 
@@ -114,6 +118,7 @@ export const RankingWhere = t.Partial(
           OR: t.Array(Self, { additionalProperties: false }),
           id: t.String(),
           ranking: t.Integer(),
+          result: t.String(),
           leaderboardId: t.String(),
           participantId: t.String(),
         },
@@ -160,6 +165,7 @@ export const RankingWhereUnique = t.Recursive(
             {
               id: t.String(),
               ranking: t.Integer(),
+              result: t.String(),
               leaderboardId: t.String(),
               participantId: t.String(),
             },
@@ -177,6 +183,7 @@ export const RankingSelect = t.Partial(
     {
       id: t.Boolean(),
       ranking: t.Boolean(),
+      result: t.Boolean(),
       leaderboardId: t.Boolean(),
       leaderboard: t.Boolean(),
       participantId: t.Boolean(),
@@ -201,6 +208,9 @@ export const RankingOrderBy = t.Partial(
         additionalProperties: false,
       }),
       ranking: t.Union([t.Literal("asc"), t.Literal("desc")], {
+        additionalProperties: false,
+      }),
+      result: t.Union([t.Literal("asc"), t.Literal("desc")], {
         additionalProperties: false,
       }),
       leaderboardId: t.Union([t.Literal("asc"), t.Literal("desc")], {

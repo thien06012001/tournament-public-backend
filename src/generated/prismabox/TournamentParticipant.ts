@@ -131,6 +131,7 @@ export const TournamentParticipantRelations = t.Object(
         {
           id: t.String(),
           ranking: t.Integer(),
+          result: __nullable__(t.String()),
           leaderboardId: t.String(),
           participantId: t.String(),
         },

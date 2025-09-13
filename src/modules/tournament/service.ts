@@ -161,6 +161,19 @@ export class TournamentService {
             },
           },
         },
+        leaderboard: {
+          select: {
+            id: true,
+            rankings: {
+              select: {
+                id: true,
+                ranking: true,
+                result: true,
+                participantId: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -179,7 +192,7 @@ export class TournamentService {
         })),
       }))
     );
-
+    console.log(t);
     return {
       id: t.id,
       name: t.name,
@@ -196,6 +209,8 @@ export class TournamentService {
       participants: t.participants,
       stages: t.stages.map((s) => ({ id: s.id, order: s.order, type: s.type })),
       rounds,
+      theme: t.theme,
+      leaderboard: t.leaderboard,
     };
   }
 
