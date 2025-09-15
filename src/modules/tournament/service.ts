@@ -115,6 +115,7 @@ export class TournamentService {
         background: true,
         thumbnail: true,
         sportId: true,
+        theme: true,
         participants: {
           select: {
             id: true,
@@ -123,18 +124,22 @@ export class TournamentService {
             phone: true,
             order: true,
           },
+          orderBy: { order: "asc" },
         },
-        theme: true,
         stages: {
+          orderBy: { order: "asc" },
           select: {
             id: true,
             order: true,
             type: true,
+            // For Round stages
             rounds: {
+              orderBy: { order: "asc" },
               select: {
                 id: true,
                 order: true,
                 matches: {
+                  orderBy: { order: "asc" },
                   select: {
                     id: true,
                     order: true,
@@ -147,7 +152,10 @@ export class TournamentService {
                     winnerId: true,
                     participantOneId: true,
                     participantTwoId: true,
+                    participantOne: true,
+                    participantTwo: true,
                     results: {
+                      orderBy: { order: "asc" },
                       select: {
                         id: true,
                         order: true,
@@ -159,12 +167,41 @@ export class TournamentService {
                 },
               },
             },
+            // For Single/Double Elimination stages (no rounds)
+            matches: {
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                order: true,
+                ended: true,
+                matchDate: true,
+                matchTime: true,
+                startTime: true,
+                endTime: true,
+                bracket: true,
+                winnerId: true,
+                participantOneId: true,
+                participantTwoId: true,
+                participantOne: true,
+                participantTwo: true,
+                results: {
+                  orderBy: { order: "asc" },
+                  select: {
+                    id: true,
+                    order: true,
+                    participantOneScore: true,
+                    participantTwoScore: true,
+                  },
+                },
+              },
+            },
           },
         },
         leaderboard: {
           select: {
             id: true,
             rankings: {
+              orderBy: { ranking: "asc" },
               select: {
                 id: true,
                 ranking: true,
@@ -180,35 +217,59 @@ export class TournamentService {
     if (!t) return null;
 
     const now = new Date();
-    const rounds = t.stages.flatMap((s) =>
-      s.rounds.map((r) => ({
-        id: r.id,
-        order: r.order,
-        matches: r.matches.map((m) => ({
-          ...m,
-          matchDate: m.matchDate ? m.matchDate.toISOString() : null,
-          startTime: m.startTime ? m.startTime.toISOString() : null,
-          endTime: m.endTime ? m.endTime.toISOString() : null,
-        })),
-      }))
-    );
-    console.log(t);
+
+    const serializeMatch = <
+      T extends {
+        matchDate: Date | null;
+        startTime: Date | null;
+        endTime: Date | null;
+      },
+    >(
+      m: T
+    ) => ({
+      ...m,
+      matchDate: m.matchDate ? m.matchDate.toISOString() : null,
+      startTime: m.startTime ? m.startTime.toISOString() : null,
+      endTime: m.endTime ? m.endTime.toISOString() : null,
+    });
+
+    const stages = t.stages.map((s) => {
+      if (s.type === "Round") {
+        return {
+          id: s.id,
+          order: s.order,
+          type: s.type,
+          rounds: (s.rounds ?? []).map((r) => ({
+            id: r.id,
+            order: r.order,
+            matches: (r.matches ?? []).map(serializeMatch),
+          })),
+        };
+      }
+      // SingleElimination / DoubleElimination: matches live directly on the stage
+      return {
+        id: s.id,
+        order: s.order,
+        type: s.type,
+        matches: (s.matches ?? []).map(serializeMatch),
+      };
+    });
+
     return {
       id: t.id,
       name: t.name,
       location: t.location,
       type: t.type,
       description: t.description,
-      startDate: t.startDate.toISOString(),
-      endDate: t.endDate.toISOString(),
+      startDate: t.startDate?.toISOString(),
+      endDate: t.endDate?.toISOString(),
       banner: t.banner,
       background: t.background,
       thumbnail: t.thumbnail,
       sportId: t.sportId,
       status: statusFromDates(now, t.startDate, t.endDate),
-      participants: t.participants,
-      stages: t.stages.map((s) => ({ id: s.id, order: s.order, type: s.type })),
-      rounds,
+      participants: t.participants, // already ordered
+      stages, // ← union shape per stage.type
       theme: t.theme,
       leaderboard: t.leaderboard,
     };

@@ -49,7 +49,7 @@ export namespace TournamentModel {
 
   /**
    * List item shape (exactly what the service returns)
-   * Dates are ISO strings and we add a computed `status`.
+   * Dates are ISO strings.
    */
   export const listItem = t.Object({
     id: t.String(),
@@ -124,19 +124,49 @@ export namespace TournamentModel {
     matches: t.Array(match),
   });
 
-  const stage = t.Object({
+  /**
+   * Stage union:
+   *  - Round: rounds[]
+   *  - SingleElimination / DoubleElimination: matches[]
+   *  - Leaderboard: no rounds/matches here
+   */
+  const stageRound = t.Object({
     id: t.String(),
     order: t.Integer(),
-    type: t.Union([
-      t.Literal("SingleElimination"),
-      t.Literal("DoubleElimination"),
-      t.Literal("Round"),
-      t.Literal("Leaderboard"),
-    ]),
+    type: t.Literal("Round"),
+    rounds: t.Array(round),
   });
+
+  const stageSingleElimination = t.Object({
+    id: t.String(),
+    order: t.Integer(),
+    type: t.Literal("SingleElimination"),
+    matches: t.Array(match),
+  });
+
+  const stageDoubleElimination = t.Object({
+    id: t.String(),
+    order: t.Integer(),
+    type: t.Literal("DoubleElimination"),
+    matches: t.Array(match),
+  });
+
+  const stageLeaderboard = t.Object({
+    id: t.String(),
+    order: t.Integer(),
+    type: t.Literal("Leaderboard"),
+  });
+
+  const stage = t.Union([
+    stageRound,
+    stageSingleElimination,
+    stageDoubleElimination,
+    stageLeaderboard,
+  ]);
 
   /**
    * GET /tournaments/:id response (exactly what the service returns)
+   * Note: no top-level `rounds` anymore; they're inside Round stages.
    */
   export const detailResponse = t.Object({
     id: t.String(),
@@ -153,8 +183,7 @@ export namespace TournamentModel {
     status: Status,
     participants: t.Array(participant),
     stages: t.Array(stage),
-    rounds: t.Array(round),
-    theme: t.Nullable(t.String()),
+    theme: t.Nullable(t.Any()),
     leaderboard: t.Optional(t.Any()), // Flexible structure, handled in frontend
   });
 }
