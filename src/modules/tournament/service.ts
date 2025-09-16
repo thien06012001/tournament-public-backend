@@ -233,6 +233,7 @@ export class TournamentService {
       endTime: m.endTime ? m.endTime.toISOString() : null,
     });
 
+    // inside TournamentService.byId(...)
     const stages = t.stages.map((s) => {
       if (s.type === "Round") {
         return {
@@ -246,12 +247,31 @@ export class TournamentService {
           })),
         };
       }
+
       // SingleElimination / DoubleElimination: matches live directly on the stage
+      const matches = (s.matches ?? []).map(serializeMatch);
+
+      if (s.type === "DoubleElimination") {
+        // ⚠️ backend uses "winner" / "loser"
+        const winBracketMatches = matches.filter((m) => m.bracket === "winner");
+        const loseBracketMatches = matches.filter((m) => m.bracket === "loser");
+
+        return {
+          id: s.id,
+          order: s.order,
+          type: s.type,
+          matches, // keep all matches
+          winBracketMatches, // NEW
+          loseBracketMatches, // NEW
+        };
+      }
+
+      // SingleElimination
       return {
         id: s.id,
         order: s.order,
         type: s.type,
-        matches: (s.matches ?? []).map(serializeMatch),
+        matches,
       };
     });
 

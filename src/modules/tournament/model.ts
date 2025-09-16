@@ -149,8 +149,10 @@ export namespace TournamentModel {
     order: t.Integer(),
     type: t.Literal("DoubleElimination"),
     matches: t.Array(match),
+    // NEW ↓
+    winBracketMatches: t.Optional(t.Array(match)),
+    loseBracketMatches: t.Optional(t.Array(match)),
   });
-
   const stageLeaderboard = t.Object({
     id: t.String(),
     order: t.Integer(),
