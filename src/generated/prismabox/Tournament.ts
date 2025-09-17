@@ -28,26 +28,22 @@ export const TournamentPlain = t.Object(
 
 export const TournamentRelations = t.Object(
   {
+    Theme: __nullable__(
+      t.Object(
+        {
+          id: t.String(),
+          enabled: t.Boolean(),
+          colors: t.String(),
+          tournamentId: t.String(),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     leaderboard: __nullable__(
       t.Object(
         { id: t.String(), tournamentId: t.String() },
         { additionalProperties: false },
       ),
-    ),
-    participants: t.Array(
-      t.Object(
-        {
-          id: t.String(),
-          name: t.String(),
-          email: __nullable__(t.String()),
-          order: t.Integer(),
-          phone: __nullable__(t.String()),
-          tournamentId: t.String(),
-          stageId: __nullable__(t.String()),
-        },
-        { additionalProperties: false },
-      ),
-      { additionalProperties: false },
     ),
     stages: t.Array(
       t.Object(
@@ -73,6 +69,21 @@ export const TournamentRelations = t.Object(
       ),
       { additionalProperties: false },
     ),
+    participants: t.Array(
+      t.Object(
+        {
+          id: t.String(),
+          name: t.String(),
+          email: __nullable__(t.String()),
+          order: t.Integer(),
+          phone: __nullable__(t.String()),
+          tournamentId: t.String(),
+          stageId: __nullable__(t.String()),
+        },
+        { additionalProperties: false },
+      ),
+      { additionalProperties: false },
+    ),
     sport: __nullable__(
       t.Object(
         {
@@ -80,17 +91,6 @@ export const TournamentRelations = t.Object(
           name: t.String(),
           createdAt: t.Date(),
           updatedAt: t.Date(),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    Theme: __nullable__(
-      t.Object(
-        {
-          id: t.String(),
-          enabled: t.Boolean(),
-          colors: t.String(),
-          tournamentId: t.String(),
         },
         { additionalProperties: false },
       ),
@@ -139,6 +139,19 @@ export const TournamentPlainInputUpdate = t.Object(
 
 export const TournamentRelationsInputCreate = t.Object(
   {
+    Theme: t.Optional(
+      t.Object(
+        {
+          connect: t.Object(
+            {
+              id: t.String({ additionalProperties: false }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     leaderboard: t.Optional(
       t.Object(
         {
@@ -152,7 +165,7 @@ export const TournamentRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
-    participants: t.Optional(
+    stages: t.Optional(
       t.Object(
         {
           connect: t.Array(
@@ -168,7 +181,7 @@ export const TournamentRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
-    stages: t.Optional(
+    participants: t.Optional(
       t.Object(
         {
           connect: t.Array(
@@ -197,19 +210,6 @@ export const TournamentRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
-    Theme: t.Optional(
-      t.Object(
-        {
-          connect: t.Object(
-            {
-              id: t.String({ additionalProperties: false }),
-            },
-            { additionalProperties: false },
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
   },
   { additionalProperties: false },
 );
@@ -217,7 +217,7 @@ export const TournamentRelationsInputCreate = t.Object(
 export const TournamentRelationsInputUpdate = t.Partial(
   t.Object(
     {
-      leaderboard: t.Partial(
+      Theme: t.Partial(
         t.Object(
           {
             connect: t.Object(
@@ -231,27 +231,16 @@ export const TournamentRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      participants: t.Partial(
+      leaderboard: t.Partial(
         t.Object(
           {
-            connect: t.Array(
-              t.Object(
-                {
-                  id: t.String({ additionalProperties: false }),
-                },
-                { additionalProperties: false },
-              ),
+            connect: t.Object(
+              {
+                id: t.String({ additionalProperties: false }),
+              },
               { additionalProperties: false },
             ),
-            disconnect: t.Array(
-              t.Object(
-                {
-                  id: t.String({ additionalProperties: false }),
-                },
-                { additionalProperties: false },
-              ),
-              { additionalProperties: false },
-            ),
+            disconnect: t.Boolean(),
           },
           { additionalProperties: false },
         ),
@@ -281,21 +270,32 @@ export const TournamentRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      sport: t.Partial(
+      participants: t.Partial(
         t.Object(
           {
-            connect: t.Object(
-              {
-                id: t.String({ additionalProperties: false }),
-              },
+            connect: t.Array(
+              t.Object(
+                {
+                  id: t.String({ additionalProperties: false }),
+                },
+                { additionalProperties: false },
+              ),
               { additionalProperties: false },
             ),
-            disconnect: t.Boolean(),
+            disconnect: t.Array(
+              t.Object(
+                {
+                  id: t.String({ additionalProperties: false }),
+                },
+                { additionalProperties: false },
+              ),
+              { additionalProperties: false },
+            ),
           },
           { additionalProperties: false },
         ),
       ),
-      Theme: t.Partial(
+      sport: t.Partial(
         t.Object(
           {
             connect: t.Object(
@@ -414,13 +414,13 @@ export const TournamentSelect = t.Partial(
       banner: t.Boolean(),
       background: t.Boolean(),
       thumbnail: t.Boolean(),
-      leaderboard: t.Boolean(),
       theme: t.Boolean(),
-      participants: t.Boolean(),
-      stages: t.Boolean(),
-      sport: t.Boolean(),
       sportId: t.Boolean(),
       Theme: t.Boolean(),
+      leaderboard: t.Boolean(),
+      stages: t.Boolean(),
+      participants: t.Boolean(),
+      sport: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },
@@ -431,11 +431,11 @@ export const TournamentInclude = t.Partial(
   t.Object(
     {
       type: t.Boolean(),
-      leaderboard: t.Boolean(),
-      participants: t.Boolean(),
-      stages: t.Boolean(),
-      sport: t.Boolean(),
       Theme: t.Boolean(),
+      leaderboard: t.Boolean(),
+      stages: t.Boolean(),
+      participants: t.Boolean(),
+      sport: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },

@@ -403,7 +403,8 @@ export class TournamentService {
     status: "ongoing" | "upcoming" | "past",
     page: number,
     prisma: PrismaMinimal,
-    pageSize: number = 12
+    pageSize: number = 12,
+    q: string = ""
   ) {
     const select = {
       id: true,
@@ -454,7 +455,10 @@ export class TournamentService {
     const [total, tournaments] = await Promise.all([
       prisma.tournament.count({ where: whereClause }),
       prisma.tournament.findMany({
-        where: whereClause,
+        where: {
+          ...whereClause,
+          name: { contains: q, mode: "insensitive" },
+        },
         select,
         take,
         skip,

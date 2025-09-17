@@ -1,5 +1,6 @@
 export * from "./StageType";
 export * from "./TournamentType";
+export * from "./Role";
 export * from "./Sport";
 export * from "./Tournament";
 export * from "./Theme";
@@ -12,5 +13,8 @@ export * from "./Ranking";
 export * from "./TournamentParticipant";
 export * from "./TeamMember";
 export * from "./Configuration";
+export * from "./session";
+export * from "./users";
+export * from "./verification";
 export * from "./__nullable__";
 export * from "./__transformDate__";

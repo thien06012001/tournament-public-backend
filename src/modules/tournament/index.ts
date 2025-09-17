@@ -107,8 +107,8 @@ export const TournamentModule = new Elysia({
   )
   .get(
     "/all/:status",
-    async ({ prisma, params: { status }, query: { page, pageSize } }) => {
-      return TournamentService.getByStatus(status, page, prisma, pageSize);
+    async ({ prisma, params: { status }, query: { page, pageSize, q } }) => {
+      return TournamentService.getByStatus(status, page, prisma, pageSize, q);
     },
     {
       params: t.Object({
@@ -121,6 +121,7 @@ export const TournamentModule = new Elysia({
       query: t.Object({
         page: t.Integer({ minimum: 1, default: 1 }),
         pageSize: t.Integer({ minimum: 1, maximum: 100, default: 12 }),
+        q: t.Optional(t.String()),
       }),
       response: { 200: "tournaments.list.response" },
       detail: {

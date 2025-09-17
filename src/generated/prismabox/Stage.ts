@@ -28,27 +28,6 @@ export const StagePlain = t.Object(
 
 export const StageRelations = t.Object(
   {
-    tournament: t.Object(
-      {
-        id: t.String(),
-        name: t.String(),
-        location: t.String(),
-        type: t.Union([t.Literal("individual"), t.Literal("team")], {
-          additionalProperties: false,
-        }),
-        description: t.String(),
-        startDate: t.Date(),
-        endDate: t.Date(),
-        createdAt: t.Date(),
-        updatedAt: t.Date(),
-        banner: __nullable__(t.String()),
-        background: __nullable__(t.String()),
-        thumbnail: __nullable__(t.String()),
-        theme: __nullable__(t.String()),
-        sportId: __nullable__(t.String()),
-      },
-      { additionalProperties: false },
-    ),
     matches: t.Array(
       t.Object(
         {
@@ -73,6 +52,40 @@ export const StageRelations = t.Object(
       ),
       { additionalProperties: false },
     ),
+    rounds: t.Array(
+      t.Object(
+        {
+          id: t.String(),
+          createdAt: t.Date(),
+          updatedAt: t.Date(),
+          order: t.Integer(),
+          stageId: t.String(),
+        },
+        { additionalProperties: false },
+      ),
+      { additionalProperties: false },
+    ),
+    tournament: t.Object(
+      {
+        id: t.String(),
+        name: t.String(),
+        location: t.String(),
+        type: t.Union([t.Literal("individual"), t.Literal("team")], {
+          additionalProperties: false,
+        }),
+        description: t.String(),
+        startDate: t.Date(),
+        endDate: t.Date(),
+        createdAt: t.Date(),
+        updatedAt: t.Date(),
+        banner: __nullable__(t.String()),
+        background: __nullable__(t.String()),
+        thumbnail: __nullable__(t.String()),
+        theme: __nullable__(t.String()),
+        sportId: __nullable__(t.String()),
+      },
+      { additionalProperties: false },
+    ),
     winners: t.Array(
       t.Object(
         {
@@ -83,19 +96,6 @@ export const StageRelations = t.Object(
           phone: __nullable__(t.String()),
           tournamentId: t.String(),
           stageId: __nullable__(t.String()),
-        },
-        { additionalProperties: false },
-      ),
-      { additionalProperties: false },
-    ),
-    rounds: t.Array(
-      t.Object(
-        {
-          id: t.String(),
-          createdAt: t.Date(),
-          updatedAt: t.Date(),
-          order: t.Integer(),
-          stageId: t.String(),
         },
         { additionalProperties: false },
       ),
@@ -145,34 +145,7 @@ export const StagePlainInputUpdate = t.Object(
 
 export const StageRelationsInputCreate = t.Object(
   {
-    tournament: t.Object(
-      {
-        connect: t.Object(
-          {
-            id: t.String({ additionalProperties: false }),
-          },
-          { additionalProperties: false },
-        ),
-      },
-      { additionalProperties: false },
-    ),
     matches: t.Optional(
-      t.Object(
-        {
-          connect: t.Array(
-            t.Object(
-              {
-                id: t.String({ additionalProperties: false }),
-              },
-              { additionalProperties: false },
-            ),
-            { additionalProperties: false },
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
-    winners: t.Optional(
       t.Object(
         {
           connect: t.Array(
@@ -204,6 +177,33 @@ export const StageRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
+    tournament: t.Object(
+      {
+        connect: t.Object(
+          {
+            id: t.String({ additionalProperties: false }),
+          },
+          { additionalProperties: false },
+        ),
+      },
+      { additionalProperties: false },
+    ),
+    winners: t.Optional(
+      t.Object(
+        {
+          connect: t.Array(
+            t.Object(
+              {
+                id: t.String({ additionalProperties: false }),
+              },
+              { additionalProperties: false },
+            ),
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
   },
   { additionalProperties: false },
 );
@@ -211,17 +211,6 @@ export const StageRelationsInputCreate = t.Object(
 export const StageRelationsInputUpdate = t.Partial(
   t.Object(
     {
-      tournament: t.Object(
-        {
-          connect: t.Object(
-            {
-              id: t.String({ additionalProperties: false }),
-            },
-            { additionalProperties: false },
-          ),
-        },
-        { additionalProperties: false },
-      ),
       matches: t.Partial(
         t.Object(
           {
@@ -247,7 +236,7 @@ export const StageRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      winners: t.Partial(
+      rounds: t.Partial(
         t.Object(
           {
             connect: t.Array(
@@ -272,7 +261,18 @@ export const StageRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      rounds: t.Partial(
+      tournament: t.Object(
+        {
+          connect: t.Object(
+            {
+              id: t.String({ additionalProperties: false }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
+      ),
+      winners: t.Partial(
         t.Object(
           {
             connect: t.Array(
@@ -397,11 +397,11 @@ export const StageSelect = t.Partial(
       parallelMatches: t.Boolean(),
       maxTimePerMatch: t.Boolean(),
       tournamentId: t.Boolean(),
-      tournament: t.Boolean(),
       type: t.Boolean(),
       matches: t.Boolean(),
-      winners: t.Boolean(),
       rounds: t.Boolean(),
+      tournament: t.Boolean(),
+      winners: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },
@@ -411,11 +411,11 @@ export const StageSelect = t.Partial(
 export const StageInclude = t.Partial(
   t.Object(
     {
-      tournament: t.Boolean(),
       type: t.Boolean(),
       matches: t.Boolean(),
-      winners: t.Boolean(),
       rounds: t.Boolean(),
+      tournament: t.Boolean(),
+      winners: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },

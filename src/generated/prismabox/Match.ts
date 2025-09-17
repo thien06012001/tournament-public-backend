@@ -28,19 +28,18 @@ export const MatchPlain = t.Object(
 
 export const MatchRelations = t.Object(
   {
-    winner: __nullable__(
+    results: t.Array(
       t.Object(
         {
           id: t.String(),
-          name: t.String(),
-          email: __nullable__(t.String()),
           order: t.Integer(),
-          phone: __nullable__(t.String()),
-          tournamentId: t.String(),
-          stageId: __nullable__(t.String()),
+          participantOneScore: t.Integer(),
+          participantTwoScore: t.Integer(),
+          matchId: t.String(),
         },
         { additionalProperties: false },
       ),
+      { additionalProperties: false },
     ),
     participantOne: __nullable__(
       t.Object(
@@ -70,6 +69,18 @@ export const MatchRelations = t.Object(
         { additionalProperties: false },
       ),
     ),
+    round: __nullable__(
+      t.Object(
+        {
+          id: t.String(),
+          createdAt: t.Date(),
+          updatedAt: t.Date(),
+          order: t.Integer(),
+          stageId: t.String(),
+        },
+        { additionalProperties: false },
+      ),
+    ),
     stage: __nullable__(
       t.Object(
         {
@@ -93,30 +104,19 @@ export const MatchRelations = t.Object(
         { additionalProperties: false },
       ),
     ),
-    round: __nullable__(
+    winner: __nullable__(
       t.Object(
         {
           id: t.String(),
-          createdAt: t.Date(),
-          updatedAt: t.Date(),
+          name: t.String(),
+          email: __nullable__(t.String()),
           order: t.Integer(),
-          stageId: t.String(),
+          phone: __nullable__(t.String()),
+          tournamentId: t.String(),
+          stageId: __nullable__(t.String()),
         },
         { additionalProperties: false },
       ),
-    ),
-    results: t.Array(
-      t.Object(
-        {
-          id: t.String(),
-          order: t.Integer(),
-          participantOneScore: t.Integer(),
-          participantTwoScore: t.Integer(),
-          matchId: t.String(),
-        },
-        { additionalProperties: false },
-      ),
-      { additionalProperties: false },
     ),
   },
   { additionalProperties: false },
@@ -150,13 +150,16 @@ export const MatchPlainInputUpdate = t.Object(
 
 export const MatchRelationsInputCreate = t.Object(
   {
-    winner: t.Optional(
+    results: t.Optional(
       t.Object(
         {
-          connect: t.Object(
-            {
-              id: t.String({ additionalProperties: false }),
-            },
+          connect: t.Array(
+            t.Object(
+              {
+                id: t.String({ additionalProperties: false }),
+              },
+              { additionalProperties: false },
+            ),
             { additionalProperties: false },
           ),
         },
@@ -189,19 +192,6 @@ export const MatchRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
-    stage: t.Optional(
-      t.Object(
-        {
-          connect: t.Object(
-            {
-              id: t.String({ additionalProperties: false }),
-            },
-            { additionalProperties: false },
-          ),
-        },
-        { additionalProperties: false },
-      ),
-    ),
     round: t.Optional(
       t.Object(
         {
@@ -215,16 +205,26 @@ export const MatchRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
-    results: t.Optional(
+    stage: t.Optional(
       t.Object(
         {
-          connect: t.Array(
-            t.Object(
-              {
-                id: t.String({ additionalProperties: false }),
-              },
-              { additionalProperties: false },
-            ),
+          connect: t.Object(
+            {
+              id: t.String({ additionalProperties: false }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
+      ),
+    ),
+    winner: t.Optional(
+      t.Object(
+        {
+          connect: t.Object(
+            {
+              id: t.String({ additionalProperties: false }),
+            },
             { additionalProperties: false },
           ),
         },
@@ -238,16 +238,27 @@ export const MatchRelationsInputCreate = t.Object(
 export const MatchRelationsInputUpdate = t.Partial(
   t.Object(
     {
-      winner: t.Partial(
+      results: t.Partial(
         t.Object(
           {
-            connect: t.Object(
-              {
-                id: t.String({ additionalProperties: false }),
-              },
+            connect: t.Array(
+              t.Object(
+                {
+                  id: t.String({ additionalProperties: false }),
+                },
+                { additionalProperties: false },
+              ),
               { additionalProperties: false },
             ),
-            disconnect: t.Boolean(),
+            disconnect: t.Array(
+              t.Object(
+                {
+                  id: t.String({ additionalProperties: false }),
+                },
+                { additionalProperties: false },
+              ),
+              { additionalProperties: false },
+            ),
           },
           { additionalProperties: false },
         ),
@@ -280,20 +291,6 @@ export const MatchRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      stage: t.Partial(
-        t.Object(
-          {
-            connect: t.Object(
-              {
-                id: t.String({ additionalProperties: false }),
-              },
-              { additionalProperties: false },
-            ),
-            disconnect: t.Boolean(),
-          },
-          { additionalProperties: false },
-        ),
-      ),
       round: t.Partial(
         t.Object(
           {
@@ -308,27 +305,30 @@ export const MatchRelationsInputUpdate = t.Partial(
           { additionalProperties: false },
         ),
       ),
-      results: t.Partial(
+      stage: t.Partial(
         t.Object(
           {
-            connect: t.Array(
-              t.Object(
-                {
-                  id: t.String({ additionalProperties: false }),
-                },
-                { additionalProperties: false },
-              ),
+            connect: t.Object(
+              {
+                id: t.String({ additionalProperties: false }),
+              },
               { additionalProperties: false },
             ),
-            disconnect: t.Array(
-              t.Object(
-                {
-                  id: t.String({ additionalProperties: false }),
-                },
-                { additionalProperties: false },
-              ),
+            disconnect: t.Boolean(),
+          },
+          { additionalProperties: false },
+        ),
+      ),
+      winner: t.Partial(
+        t.Object(
+          {
+            connect: t.Object(
+              {
+                id: t.String({ additionalProperties: false }),
+              },
               { additionalProperties: false },
             ),
+            disconnect: t.Boolean(),
           },
           { additionalProperties: false },
         ),
@@ -437,17 +437,17 @@ export const MatchSelect = t.Partial(
       startTime: t.Boolean(),
       endTime: t.Boolean(),
       bracket: t.Boolean(),
-      winner: t.Boolean(),
       winnerId: t.Boolean(),
       participantOneId: t.Boolean(),
-      participantOne: t.Boolean(),
       participantTwoId: t.Boolean(),
-      participantTwo: t.Boolean(),
       stageId: t.Boolean(),
-      stage: t.Boolean(),
-      round: t.Boolean(),
       roundId: t.Boolean(),
       results: t.Boolean(),
+      participantOne: t.Boolean(),
+      participantTwo: t.Boolean(),
+      round: t.Boolean(),
+      stage: t.Boolean(),
+      winner: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },
@@ -457,12 +457,12 @@ export const MatchSelect = t.Partial(
 export const MatchInclude = t.Partial(
   t.Object(
     {
-      winner: t.Boolean(),
+      results: t.Boolean(),
       participantOne: t.Boolean(),
       participantTwo: t.Boolean(),
-      stage: t.Boolean(),
       round: t.Boolean(),
-      results: t.Boolean(),
+      stage: t.Boolean(),
+      winner: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },

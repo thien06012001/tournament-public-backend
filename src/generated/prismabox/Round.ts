@@ -17,27 +17,6 @@ export const RoundPlain = t.Object(
 
 export const RoundRelations = t.Object(
   {
-    stage: t.Object(
-      {
-        id: t.String(),
-        createdAt: t.Date(),
-        updatedAt: t.Date(),
-        order: t.Integer(),
-        parallelMatches: t.Integer(),
-        maxTimePerMatch: t.Number(),
-        tournamentId: t.String(),
-        type: t.Union(
-          [
-            t.Literal("SingleElimination"),
-            t.Literal("DoubleElimination"),
-            t.Literal("Round"),
-            t.Literal("Leaderboard"),
-          ],
-          { additionalProperties: false },
-        ),
-      },
-      { additionalProperties: false },
-    ),
     matches: t.Array(
       t.Object(
         {
@@ -62,6 +41,27 @@ export const RoundRelations = t.Object(
       ),
       { additionalProperties: false },
     ),
+    stage: t.Object(
+      {
+        id: t.String(),
+        createdAt: t.Date(),
+        updatedAt: t.Date(),
+        order: t.Integer(),
+        parallelMatches: t.Integer(),
+        maxTimePerMatch: t.Number(),
+        tournamentId: t.String(),
+        type: t.Union(
+          [
+            t.Literal("SingleElimination"),
+            t.Literal("DoubleElimination"),
+            t.Literal("Round"),
+            t.Literal("Leaderboard"),
+          ],
+          { additionalProperties: false },
+        ),
+      },
+      { additionalProperties: false },
+    ),
   },
   { additionalProperties: false },
 );
@@ -78,17 +78,6 @@ export const RoundPlainInputUpdate = t.Object(
 
 export const RoundRelationsInputCreate = t.Object(
   {
-    stage: t.Object(
-      {
-        connect: t.Object(
-          {
-            id: t.String({ additionalProperties: false }),
-          },
-          { additionalProperties: false },
-        ),
-      },
-      { additionalProperties: false },
-    ),
     matches: t.Optional(
       t.Object(
         {
@@ -105,6 +94,17 @@ export const RoundRelationsInputCreate = t.Object(
         { additionalProperties: false },
       ),
     ),
+    stage: t.Object(
+      {
+        connect: t.Object(
+          {
+            id: t.String({ additionalProperties: false }),
+          },
+          { additionalProperties: false },
+        ),
+      },
+      { additionalProperties: false },
+    ),
   },
   { additionalProperties: false },
 );
@@ -112,17 +112,6 @@ export const RoundRelationsInputCreate = t.Object(
 export const RoundRelationsInputUpdate = t.Partial(
   t.Object(
     {
-      stage: t.Object(
-        {
-          connect: t.Object(
-            {
-              id: t.String({ additionalProperties: false }),
-            },
-            { additionalProperties: false },
-          ),
-        },
-        { additionalProperties: false },
-      ),
       matches: t.Partial(
         t.Object(
           {
@@ -147,6 +136,17 @@ export const RoundRelationsInputUpdate = t.Partial(
           },
           { additionalProperties: false },
         ),
+      ),
+      stage: t.Object(
+        {
+          connect: t.Object(
+            {
+              id: t.String({ additionalProperties: false }),
+            },
+            { additionalProperties: false },
+          ),
+        },
+        { additionalProperties: false },
       ),
     },
     { additionalProperties: false },
@@ -224,8 +224,8 @@ export const RoundSelect = t.Partial(
       updatedAt: t.Boolean(),
       order: t.Boolean(),
       stageId: t.Boolean(),
-      stage: t.Boolean(),
       matches: t.Boolean(),
+      stage: t.Boolean(),
       _count: t.Boolean(),
     },
     { additionalProperties: false },
@@ -234,7 +234,7 @@ export const RoundSelect = t.Partial(
 
 export const RoundInclude = t.Partial(
   t.Object(
-    { stage: t.Boolean(), matches: t.Boolean(), _count: t.Boolean() },
+    { matches: t.Boolean(), stage: t.Boolean(), _count: t.Boolean() },
     { additionalProperties: false },
   ),
 );
