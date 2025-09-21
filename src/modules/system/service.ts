@@ -106,7 +106,8 @@ export class SystemService {
     const ongoingRows = await prisma.match.findMany({
       where: {
         ended: false,
-        startTime: { lte: now },
+        matchDate: { gte: todayStart, lte: todayEnd }, // same calendar day as now
+        startTime: { gt: now }, // must be in the future
       },
       select: {
         startTime: true,
@@ -129,13 +130,13 @@ export class SystemService {
           take: 1,
         },
       },
-      orderBy: [{ startTime: "desc" }, { matchDate: "desc" }],
+      orderBy: [{ startTime: "asc" }], // soonest first
       take: 20,
     });
 
     const ongoing = ongoingRows.map((m) => {
       const tName = tournamentNameOf(m);
-      const startedAt = m.startTime ?? m.matchDate ?? new Date();
+      const startsAt = m.startTime!; // guaranteed by filter above
       const score = m.results[0]
         ? {
             a: m.results[0].participantOneScore,
@@ -148,12 +149,12 @@ export class SystemService {
         teamA: m.participantOne?.name ?? "TBD",
         teamB: m.participantTwo?.name ?? "TBD",
         score,
-        date: toISODate(startedAt),
-        time: toHHmm(startedAt),
-        elapsedMinutes: minutesBetween(startedAt, now),
+        date: toISODate(startsAt),
+        time: toHHmm(startsAt),
+        // minutes until kickoff (kept the same field name to avoid breaking callers)
+        elapsedMinutes: minutesBetween(now, startsAt),
       };
     });
-
     // Upcoming tournaments (next 30 days by default)
     const upcomingRows = await prisma.tournament.findMany({
       where: { startDate: { gte: todayStart } },
