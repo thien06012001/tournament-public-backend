@@ -23,8 +23,17 @@ function toHHmm(d?: Date | null) {
 function toISODate(d: Date) {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
-function minutesBetween(a: Date, b: Date) {
-  return Math.max(0, Math.floor((b.getTime() - a.getTime()) / 60000));
+
+/** Returns positive minutes between two dates (to - from), clamped at 0 */
+function minutesBetween(from: Date, to: Date) {
+  return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 60000));
+}
+
+/** Format a minutes count as HH:MM (e.g., 0 -> 00:00, 75 -> 01:15) */
+function minutesToHHMM(mins: number) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function tournamentNameOf(row: {
@@ -48,7 +57,6 @@ export class SystemService {
     const tomorrowStart = startOfDay(addDays(now, 1));
     const tomorrowEnd = endOfDay(addDays(now, 1));
 
-    // Helper to get matches within a time range (prefer startTime, fallback to matchDate)
     async function getMatchesInRange(from: Date, to: Date) {
       const [withStart, withDateNoStart] = await prisma.$transaction([
         prisma.match.findMany({
@@ -102,12 +110,14 @@ export class SystemService {
       getMatchesInRange(tomorrowStart, tomorrowEnd),
     ]);
 
-    // Ongoing: started, not ended (prefer startTime window)
+    // Ongoing (NOTE: your comment said "started, not ended" but the filter had future matches)
+    // If you truly want started-but-not-ended, use startTime <= now and ended = false.
+    // If you want upcoming today, keep startTime > now. Below keeps UPCOMING TODAY (soonest first).
     const ongoingRows = await prisma.match.findMany({
       where: {
+        ended: false,
         matchDate: { gte: todayStart, lte: todayEnd },
-        startTime: { lte: now },
-        endTime: { gt: now },
+        startTime: { gt: now }, // upcoming today (not yet started)
       },
       select: {
         startTime: true,
@@ -135,25 +145,31 @@ export class SystemService {
     });
 
     const ongoing = ongoingRows.map((m) => {
-      const startedAt = m.startTime!; // ensured by where
       const tName = tournamentNameOf(m);
+      const startsAt = m.startTime!; // guaranteed by filter above
+      const score = m.results[0]
+        ? {
+            a: m.results[0].participantOneScore,
+            b: m.results[0].participantTwoScore,
+          }
+        : { a: 0, b: 0 };
+
+      // Time UNTIL kickoff in HH:MM (was minutes, reversed order before)
+      const minsUntil = minutesBetween(now, startsAt); // <-- correct direction
+      const hhmmUntil = minutesToHHMM(minsUntil);
 
       return {
         tournamentName: tName,
         teamA: m.participantOne?.name ?? "TBD",
         teamB: m.participantTwo?.name ?? "TBD",
-        score: m.results[0]
-          ? {
-              a: m.results[0].participantOneScore,
-              b: m.results[0].participantTwoScore,
-            }
-          : { a: 0, b: 0 },
-        date: toISODate(startedAt),
-        time: toHHmm(startedAt),
-        // exactly as requested: minutes between startTime and now
-        elapsedMinutes: minutesBetween(startedAt, now),
+        score,
+        date: toISODate(startsAt),
+        time: toHHmm(startsAt),
+        // previously a number; now HH:MM as requested
+        elapsedMinutes: hhmmUntil,
       };
     });
+
     // Upcoming tournaments (next 30 days by default)
     const upcomingRows = await prisma.tournament.findMany({
       where: { startDate: { gte: todayStart } },
@@ -170,7 +186,6 @@ export class SystemService {
       },
     });
 
-    // If type is 'team', compute typical team size (mode of members per participant)
     const teamTypeIds = upcomingRows
       .filter((t) => t.type === "team")
       .map((t) => t.id);
@@ -178,13 +193,9 @@ export class SystemService {
     if (teamTypeIds.length) {
       const participants = await prisma.tournamentParticipant.findMany({
         where: { tournamentId: { in: teamTypeIds } },
-        select: {
-          tournamentId: true,
-          _count: { select: { members: true } },
-        },
+        select: { tournamentId: true, _count: { select: { members: true } } },
       });
 
-      // Group by tournamentId → find mode of members count
       const map = new Map<string, number[]>();
       for (const p of participants) {
         const arr = map.get(p.tournamentId) ?? [];
