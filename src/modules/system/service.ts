@@ -105,9 +105,9 @@ export class SystemService {
     // Ongoing: started, not ended (prefer startTime window)
     const ongoingRows = await prisma.match.findMany({
       where: {
-        ended: false,
-        matchDate: { gte: todayStart, lte: todayEnd }, // same calendar day as now
-        startTime: { gt: now }, // must be in the future
+        matchDate: { gte: todayStart, lte: todayEnd },
+        startTime: { lte: now },
+        endTime: { gt: now },
       },
       select: {
         startTime: true,
@@ -130,29 +130,28 @@ export class SystemService {
           take: 1,
         },
       },
-      orderBy: [{ startTime: "asc" }], // soonest first
+      orderBy: [{ startTime: "asc" }],
       take: 20,
     });
 
     const ongoing = ongoingRows.map((m) => {
+      const startedAt = m.startTime!; // ensured by where
       const tName = tournamentNameOf(m);
-      const startsAt = m.startTime!; // guaranteed by filter above
-      const score = m.results[0]
-        ? {
-            a: m.results[0].participantOneScore,
-            b: m.results[0].participantTwoScore,
-          }
-        : { a: 0, b: 0 };
 
       return {
         tournamentName: tName,
         teamA: m.participantOne?.name ?? "TBD",
         teamB: m.participantTwo?.name ?? "TBD",
-        score,
-        date: toISODate(startsAt),
-        time: toHHmm(startsAt),
-        // minutes until kickoff (kept the same field name to avoid breaking callers)
-        elapsedMinutes: minutesBetween(now, startsAt),
+        score: m.results[0]
+          ? {
+              a: m.results[0].participantOneScore,
+              b: m.results[0].participantTwoScore,
+            }
+          : { a: 0, b: 0 },
+        date: toISODate(startedAt),
+        time: toHHmm(startedAt),
+        // exactly as requested: minutes between startTime and now
+        elapsedMinutes: minutesBetween(startedAt, now),
       };
     });
     // Upcoming tournaments (next 30 days by default)
